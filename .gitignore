@@ -11,3 +11,5 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 code/build/
+code/output.wav
+code/MedievalLinger.wav

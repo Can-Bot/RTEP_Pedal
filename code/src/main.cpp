@@ -4,56 +4,69 @@
 #include <sndfile.h>
 #include "../lib/stretch/signalsmith-stretch.h"
 
-int main() {
-    // WAV Setup
-    const char *inputFile = "/home/alake/RTEP_Pedal/code/input.wav";
-    SF_INFO sfInfo;
-    SNDFILE *inFile = sf_open(inputFile, SFM_READ, &sfInfo);
-    if (!inFile) {
-        std::cerr << "Error: Could not open input file!" << std::endl;
-        return -1;
-    }
-    if (sfInfo.channels < 1 || sfInfo.channels > 2) {
-        std::cerr << "Error: Only mono and stereo WAV files are supported!" << std::endl;
-        sf_close(inFile);
-        return -1;
-    }
-    const char *outputFile = "output.wav";
-    SF_INFO outSfInfo = sfInfo;
-    outSfInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-    SNDFILE *outFile = sf_open(outputFile, SFM_WRITE, &outSfInfo);
-    if (!outFile) {
-        std::cerr << "Error: Could not open output file!" << std::endl;
-        sf_close(inFile);
-        return -1;
+#include "../lib/stretch/cmd/util/stopwatch.h"
+#include "../lib/stretch/cmd/util/memory-tracker.hxx"
+
+#include <iostream>
+#define LOG_EXPR(expr) std::cout << #expr << " = " << (expr) << "\n";
+
+#include "../lib/stretch/cmd/util/simple-args.h"
+#include "../lib/stretch/cmd/util/wav.h"
+
+std::string pitchShift(const std::string& inputWav, const float semitones, const float exactLength) {
+    signalsmith::Stopwatch stopwatch;
+
+    signalsmith::stretch::SignalsmithStretch<float/*, std::mt19937*/> stretch;
+    Wav inWav;
+    if (!inWav.read(inputWav).warn()) std::cerr << "failed to read WAV";
+    size_t inputLength = inWav.samples.size() / inWav.channels;
+
+    Wav outWav;
+    outWav.channels = inWav.channels;
+    outWav.sampleRate = inWav.sampleRate;
+    
+    float timeFactor = 1.0f; 
+
+    int outputLength = std::round(inputLength * timeFactor);  
+
+    stretch.presetDefault(inWav.channels, inWav.sampleRate);
+    stretch.setTransposeSemitones(semitones, 1);
+
+    size_t paddedInputLength = inputLength + stretch.inputLatency();
+    inWav.samples.resize(paddedInputLength * inWav.channels);
+
+    int tailSamples = exactLength ? stretch.outputLatency() : (stretch.outputLatency() + stretch.inputLatency());
+    int paddedOutputLength = outputLength + tailSamples;
+    outWav.samples.resize(paddedOutputLength * outWav.channels);
+
+    signalsmith::MemoryTracker processMemory;
+
+    stopwatch.start();
+    stretch.seek(inWav, stretch.inputLatency(), 1.0f / timeFactor);
+    inWav.offset += stretch.inputLatency();
+
+    stretch.process(inWav, inputLength, outWav, outputLength);
+
+    outWav.offset += outputLength;
+    stretch.flush(outWav, tailSamples);
+    outWav.offset -= outputLength;
+
+    double processSeconds = stopwatch.seconds(stopwatch.lap());
+    double processRate = (inWav.length() / inWav.sampleRate) / processSeconds;
+    double processPercent = 100 / processRate;
+    processMemory = processMemory.diff();
+    std::cout << "Process:\n\t" << processSeconds << "s, " << processRate << "x realtime, " << processPercent << "% CPU\n";
+    if (processMemory.implemented) {
+        std::cout << "\tallocated " << (processMemory.allocBytes / 1000) << "kB, freed " << (processMemory.freeBytes / 1000) << "kB\n";
+        if (processMemory) std::cerr << "allocated during process()";
     }
 
-    const int bufferSize = 1024;
-    std::vector<float> inputBuffer(bufferSize * sfInfo.channels);
-    std::vector<float> outputBuffer(bufferSize * sfInfo.channels);
-    std::vector<float*> inputChannels(sfInfo.channels);
-    std::vector<float*> outputChannels(sfInfo.channels);
-    for (int c = 0; c < sfInfo.channels; ++c) {
-        inputChannels[c] = inputBuffer.data() + c;
-        outputChannels[c] = outputBuffer.data() + c;
-    }
+    if (!outWav.write("output.wav").warn()) std::cerr << "failed to write WAV";
 
-    // Pitch Shift
-    using Stretch = signalsmith::stretch::SignalsmithStretch<float>;
-    Stretch stretch;
-    int sampleRate = sfInfo.samplerate;
-    stretch.presetDefault(channels, sampleRate);
-    stretch.setTransposeSemitones(4);  
-    while (true) {
-        int framesRead = sf_readf_float(inFile, inputBuffer.data(), bufferSize);
-        if (framesRead == 0) break;  // End of file
-        stretch.process(inputChannels.data(), framesRead, outputChannels.data(), framesRead);
-        sf_writef_float(outFile, outputBuffer.data(), framesRead);
-    }
+    return "penis";
+}
 
-    sf_close(inFile);
-    sf_close(outFile);
 
-    std::cout << "Pitch shift completed - Output saved as 'output.wav'." << std::endl;
-    return 0;
+int main(int argc, char* argv[]) {
+	pitchShift("input.wav", 3, 0);
 }

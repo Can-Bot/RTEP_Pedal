@@ -19,7 +19,9 @@ int main() {
         return -1;
     }
     const char *outputFile = "output.wav";
-    SNDFILE *outFile = sf_open(outputFile, SFM_WRITE, &sfInfo);
+    SF_INFO outSfInfo = sfInfo;
+    outSfInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+    SNDFILE *outFile = sf_open(outputFile, SFM_WRITE, &outSfInfo);
     if (!outFile) {
         std::cerr << "Error: Could not open output file!" << std::endl;
         sf_close(inFile);
@@ -32,13 +34,15 @@ int main() {
     std::vector<float*> inputChannels(sfInfo.channels);
     std::vector<float*> outputChannels(sfInfo.channels);
     for (int c = 0; c < sfInfo.channels; ++c) {
-        inputChannels[c] = &inputBuffer[c];
-        outputChannels[c] = &outputBuffer[c];
-    }  
+        inputChannels[c] = inputBuffer.data() + c;
+        outputChannels[c] = outputBuffer.data() + c;
+    }
 
     // Pitch Shift
     using Stretch = signalsmith::stretch::SignalsmithStretch<float>;
     Stretch stretch;
+    int sampleRate = sfInfo.samplerate;
+    stretch.presetDefault(channels, sampleRate);
     stretch.setTransposeSemitones(4);  
     while (true) {
         int framesRead = sf_readf_float(inFile, inputBuffer.data(), bufferSize);
@@ -53,31 +57,3 @@ int main() {
     std::cout << "Pitch shift completed - Output saved as 'output.wav'." << std::endl;
     return 0;
 }
-
-// int main()
-// {
-//     // Open input WAV file using libsndfile
-//     const char *inputFile = "input.wav";
-//     SF_INFO sfInfo;
-//     SNDFILE *inFile = sf_open(inputFile, SFM_READ, &sfInfo);
-//     if (!inFile) {
-//     std::cerr << "Error opening input file!" << std::endl;
-//     return -1;
-// }
-
-//     using Stretch = signalsmith::stretch::SignalsmithStretch<float>;
-//     Stretch stretch;
-//     stretch.presetDefault(channels, sampleRate);
-
-//     const int bufferSize = 1024;
-//     float inputBuffer[bufferSize];
-//     float outputBuffer[bufferSize];
-
-//     stretch.setTransposeSemitones(2); // up one semitone
-//     stretch.seek(inputBuffer, inputSample, playbackRateHint);
-//     stretch.flush(outputBuffer, outputSample);
-
-//     printf("Real Time Harmoniser Pedal\n");
-
-//     return 0;
-// }

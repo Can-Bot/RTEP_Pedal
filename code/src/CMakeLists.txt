@@ -25,6 +25,7 @@ add_library(pedal_lib ${ALL_SOURCES})
 # Include directories
 target_include_directories(pedal_lib PUBLIC
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/display
     ${CMAKE_SOURCE_DIR}/src/dsp
     ${CMAKE_SOURCE_DIR}/src/sampling

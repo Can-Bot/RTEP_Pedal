@@ -14,8 +14,6 @@ code/build/
 .DS_Store
 .vscode
 
-code/lib/
-
 code/assets/output.wav
 code/output.wav
 code/input.wav

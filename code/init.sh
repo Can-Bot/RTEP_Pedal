@@ -1,40 +1,80 @@
+#!/bin/bash
+
+set -e  # Exit on any error
+
 original_directory=$(pwd)
-script_directory=$(dirname "$0")
+script_directory=$(cd "$(dirname "$0")" && pwd)
 
+# ------------------------------
+# System Update & Essentials
+# ------------------------------
 sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install build-essential
-sudo apt-get install cmake gdb
-sudo apt-get install clang clang-tidy
+sudo apt-get upgrade -y
+sudo apt-get install -y \
+  build-essential \
+  cmake \
+  gdb \
+  clang \
+  clang-tidy \
+  git \
+  curl
 
-sudo apt-get install avahi-daemon
-sudo apt-get install nginx fcgiwrap
+# ------------------------------
+# Networking & Server Tools
+# ------------------------------
+sudo apt-get install -y \
+  avahi-daemon \
+  nginx \
+  fcgiwrap
 
-sudo apt-get install libsndfile1-dev pkg-config
-sudo apt-get install libasound2-dev
+# ------------------------------
+# Audio Libraries
+# ------------------------------
+sudo apt-get install -y \
+  libsndfile1-dev \
+  libasound2-dev \
+  pkg-config \
+  libssl-dev \
+  sndfile-programs \
+  sox
 
-sudo apt-get install libgtest-dev
-sudo apt-get install libsndfile1-dev pkg-config
-sudo apt-get install sndfile-programs
-sudo apt-get install sox
-sudo apt-get install libasound2-dev
-sudo apt-get autoremove
+# ------------------------------
+# Google Test (headers only)
+# ------------------------------
+sudo apt-get install -y libgtest-dev
 
-sudo hostnamectl set-hostname shred
+# ------------------------------
+# Hostname Setup
+# ------------------------------
+# sudo hostnamectl set-hostname shred
 
-cd "$script_directory/lib"
+# ------------------------------
+# Prepare Libraries via Submodules
+# ------------------------------
+sudo ./module_setup.sh
 
-# If directory exists and is not a git repo, remove it
-if [ -d "signalsmith-stretch" ]; then
-  if [ ! -d "signalsmith-stretch/.git" ]; then
-    rm -rf signalsmith-stretch
-  fi
+# ------------------------------
+# Node.js and Angular CLI
+# ------------------------------
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo npm install -g @angular/cli
+
+# ------------------------------
+# Set Up Angular Project (if missing)
+# ------------------------------
+cd "$script_directory"
+if [ ! -d "src/shred-web" ]; then
+  ng new shred-web --routing=true --style=css
+  cd src/shred-web
+  ng generate service services/websocket
+  cd "$script_directory"
 fi
 
-# Clone if not already present
-if [ ! -d "signalsmith-stretch" ]; then
-  git submodule add -f https://github.com/Signalsmith-Audio/signalsmith-stretch.git ./signalsmith-stretch
-fi
+# ------------------------------
+# Final Cleanup
+# ------------------------------
+sudo apt-get autoremove -y
 
 cd "$original_directory"
-
+echo "Setup complete. Build with ./build.sh"

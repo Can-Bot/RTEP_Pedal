@@ -1,0 +1,14 @@
+<main>
+  <h1>Shred Pedal</h1>
+  <p>Click a key to send a note:</p>
+
+  <div class="piano">
+    <button *ngFor="let note of notes" class="key" (click)="playNote(note)">
+      {{ note }}
+    </button>
+  </div>
+
+  <p *ngIf="lastNote">
+    🎵 Last note played: <strong>{{ lastNote }}</strong>
+  </p>
+</main>

@@ -36,9 +36,8 @@ fi
 
 cd "$original_directory"
 
-# Check if the application binary exists before printing success message
-if [ -f "./build/src/shred_pedal" ]; then
-    echo "Application built successfully"
+if [ -f "$script_directory/build/src/shred_pedal" ]; then
+    echo "Application built successfully: $script_directory/build/src/shred_pedal"
 else
     echo "Build completed, but executable not found. Check make_errors.log"
     exit 1

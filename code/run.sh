@@ -1,8 +1,10 @@
 #!/bin/bash
 
 set -e
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
 
-PROJECT_ROOT=$(cd "$(dirname "$0")" && pwd)
+cd "$repo_root"
+PROJECT_ROOT="$repo_root/code"
 ANGULAR_PROJECT="$PROJECT_ROOT/shred-web"
 SERVER_BINARY="$PROJECT_ROOT/build/src/server/shred_server"
 PEDAL_BINARY="$PROJECT_ROOT/build/src/shred_pedal"

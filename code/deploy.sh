@@ -3,8 +3,8 @@
 set -e
 
 PROJECT_ROOT=$(cd "$(dirname "$0")" && pwd)
-ANGULAR_PROJECT="$PROJECT_ROOT/shred-web"
-SERVER_BINARY="$PROJECT_ROOT/build/server/shred_server"
+ANGULAR_PROJECT="$PROJECT_ROOT/src/shred-web"
+SERVER_BINARY="$PROJECT_ROOT/build/src/server/shred_server"
 PEDAL_BINARY="$PROJECT_ROOT/build/src/shred_pedal"
 NGINX_WEBROOT="/var/www/shred.local"
 NGINX_CONFIG="/etc/nginx/sites-available/shred.local"

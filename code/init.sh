@@ -1,9 +1,10 @@
 #!/bin/bash
 
 set -e  # Exit on any error
-
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+script_directory="$repo_root/code"
+cd "$repo_root"
 original_directory=$(pwd)
-script_directory=$(cd "$(dirname "$0")" && pwd)
 
 # ------------------------------
 # System Update & Essentials
@@ -51,7 +52,8 @@ sudo apt-get install -y libgtest-dev
 # ------------------------------
 # Prepare Libraries via Submodules
 # ------------------------------
-sudo ./module_setup.sh
+chmod +x "$script_directory"/module_setup.sh
+sudo "$script_directory"/module_setup.sh
 
 # ------------------------------
 # Node.js and Angular CLI

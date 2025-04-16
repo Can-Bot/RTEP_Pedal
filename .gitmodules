@@ -1,0 +1,9 @@
+[submodule "code/lib/signalsmith-stretch"]
+	path = code/lib/signalsmith-stretch
+	url = https://github.com/Signalsmith-Audio/signalsmith-stretch.git
+[submodule "code/lib/uSockets"]
+	path = code/lib/uSockets
+	url = https://github.com/uNetworking/uSockets.git
+[submodule "code/lib/vcpkg"]
+	path = code/lib/vcpkg
+	url = https://github.com/microsoft/vcpkg.git

@@ -36,8 +36,9 @@ target_include_directories(pedal_lib PUBLIC
 target_link_libraries(pedal_lib PRIVATE pthread sndfile)
 
 # Main executable
-add_executable(shred_pedal main.cpp)
+add_executable(shred_pedal main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/dsp/ForceEffects.cpp)
 target_link_libraries(shred_pedal PRIVATE pedal_lib stdc++fs)
+
 
 # Add tests (integration + unit)
 add_subdirectory(test)

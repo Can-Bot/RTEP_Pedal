@@ -38,7 +38,7 @@ void processSample(Sample& sample, DigitalSignalChain& dspChain, MockOutputModul
  */
 int main(int argc, char* argv[])
 {
-    std::cout << "Real-Time Harmoniser Pedal: Testing Mode\n";
+    std::cout << "Real-Time Pedal: Testing Mode\n";
 
      if (argc < 3) {
         std::cerr << "[Usage] " << argv[0] << " <input.wav> <output.wav>\n";
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     // Optional: call to anchor OctaveDoubler object file during linking (only needed if effect fails to register)
     ForceAllEffects();
 
-    dspChain.loadEffectsFromFile("assets/effects_chain.txt");
+    dspChain.loadEffectsFromFile("code/assets/effects_chain.txt");
 
     // Process audio sample-by-sample
     float pcm;

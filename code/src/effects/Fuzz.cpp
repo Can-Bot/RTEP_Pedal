@@ -1,6 +1,7 @@
 #include "Fuzz.h"
 #include "EffectRegistration.h"
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 
 Fuzz::Fuzz()
@@ -26,7 +27,7 @@ float Fuzz::process(float sample)
     {
         threshold = 1.0f; // Fallback threshold
     }
-    std::cout << "Sample: " << sample << "Threshold: " << threshold << "\r";
+    std::cout << std::fixed << std::setprecision(4) << "Sample: " << sample << " Threshold: " << threshold << "\r";
     if (sample > threshold)
         return threshold;
     if (sample < -threshold)

@@ -84,7 +84,7 @@ code/
 | Latency (per sample) | < 3μs (tested on x86) |
 | Realtime Factor    | ~10x            |
 | CPU Usage          | < 40% on RPi 4  |
-| Memory Leaks       | ❌ None (Valgrind verified) |
+| Memory Leaks       | ❌ None beyond Alsa Standard (Valgrind verified) |
 
 ## 🔬 Features Under Development
 

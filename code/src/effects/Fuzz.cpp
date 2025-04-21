@@ -27,7 +27,9 @@ float Fuzz::process(float sample)
     {
         threshold = 1.0f; // Fallback threshold
     }
-    std::cout << std::fixed << std::setprecision(4) << "Sample: " << sample << " Threshold: " << threshold << "\r";
+    std::cout << std::fixed << std::showpos << std::setprecision(4)
+              << "Sample: " << sample << " Threshold: " << threshold << "\r";
+
     if (sample > threshold)
         return threshold;
     if (sample < -threshold)

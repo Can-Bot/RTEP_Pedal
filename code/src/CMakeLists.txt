@@ -60,8 +60,8 @@ target_include_directories(pedal_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/dsp
     ${CMAKE_CURRENT_SOURCE_DIR}/sampling
     ${CMAKE_CURRENT_SOURCE_DIR}/effects
-    ${CMAKE_SOURCE_DIR}/src/encoder_input
-    ${CMAKE_SOURCE_DIR}/src/gpio_event
+    ${CMAKE_CURRENT_SOURCE_DIR}/encoder_input
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpio_event
 )
 
 

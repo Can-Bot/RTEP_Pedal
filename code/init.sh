@@ -15,7 +15,9 @@ sudo apt-get install libasound2-dev
 sudo apt-get install libgpiod-dev
 sudo apt-get autoremove
 
+mkdir -p "$script_directory/lib"
 cd "$script_directory/lib"
+
 
 # If directory exists and is not a git repo, remove it
 if [ -d "signalsmith-stretch" ]; then
@@ -38,14 +40,6 @@ if [ ! -d "lg" ]; then
   cd lg
   make
   sudo make install
-  cd ..
-fi
-
-# Clone IIR filter library (header-only)
-if [ ! -d "iir1" ]; then
-  git submodule add -f https://github.com/berndporr/iir1.git ./iir1
-  cd iir1
-  git checkout master
   cd ..
 fi
 

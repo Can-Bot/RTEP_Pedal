@@ -1,138 +1,101 @@
-#include "MCP23017Driver.h"
+#ifndef MCP23017DRIVER_H
+#define MCP23017DRIVER_H
+#include <cstdint>
 
-// Initialise I2C and set all the pins to INPUT_PULLUP except for GPA7 & GPB7
-bool MCP23017Driver::begin()
-{  
-    ioctl(_file_i2c, I2C_SLAVE, MCP23017_I2C_ADDR);
+#include "MCP23017Registers.h"
+#include <iostream>
+#include <unistd.h>        //Needed for I2C port
+#include <fcntl.h>         //Needed for I2C port
+#include <sys/ioctl.h>     //Needed for I2C port
+#include <linux/i2c-dev.h> //Needed for I2C port
 
-    //set the control register (mirror interrupt, int active-low, no sequential operation)
-    this->i2c_write_8(MCP23x17_IOCR,0x60);
+#define MCP23017_I2C_ADDR 0x20
+static int _file_i2c = open("/dev/i2c-1", O_RDWR);
 
-    //set all as inputs except the forbidden ones
-    this->i2c_write_8(MCP23x17_DDR_A,0x7F);
-    this->i2c_write_8(MCP23x17_DDR_B,0x7F);
-
-    //set the polarity to invert on all
-    this->i2c_write_8(MCP23x17_POL_A,0xFF);
-    this->i2c_write_8(MCP23x17_POL_B,0xFF);
-
-    //set the interrupt on change to all buttons and A pins (see schematic for reference)
-    this->enableAllInterrupt(true);
-
-    //set the interrupt trigger comparison to -> previous state
-    this->i2c_write_8(MCP23x17_INTCON_A,0x00);
-    this->i2c_write_8(MCP23x17_INTCON_B,0x00);
-
-    //read the interrupt capture to clear the interrupt
-    this->i2c_read_8(MCP23x17_INTCAP_A);
-    this->i2c_read_8(MCP23x17_INTCAP_B);
-
-
-    return true;
-}
-
-bool MCP23017Driver::enableAllInterrupt(bool state){
-    if(state)
-    {
-        this->i2c_write_8(MCP23x17_GPINTEN_A,(ENC_A[0]+ENC_A[1]+ENC_A[2]));
-        this->i2c_write_8(MCP23x17_GPINTEN_B,(ENC_PUSH[0]+ENC_PUSH[1]+ENC_PUSH[2]));
-        this->i2c_read_8(MCP23x17_INTCAP_A);
-        this->i2c_read_8(MCP23x17_INTCAP_B);
-    } else 
-    {
-        this->i2c_write_8(MCP23x17_GPINTEN_A,0x00);
-        this->i2c_write_8(MCP23x17_GPINTEN_B,0x00);
-    }
-
-    return true;
-}
-
-// Set all pins of one port to either Input or Output depending on the bit mask
-bool MCP23017Driver::pinMode(bool port, uint8_t bitMask)
-{  
-    this->i2c_write_8(port == 0 ? MCP23x17_PUR_A : MCP23x17_PUR_B, bitMask);
-    this->i2c_write_8(port == 0 ? MCP23x17_DDR_A : MCP23x17_DDR_B, bitMask);
-    this->i2c_write_8(port == 0 ? MCP23x17_POL_A : MCP23x17_POL_B, 0x00);
-
-    return true;
-}
-
-// Read the state of all I/O of a port when requested
-uint8_t MCP23017Driver::readPort(bool port)
-{   
-    return this->i2c_read_8(port == 0 ? MCP23x17_GPIO_A : MCP23x17_GPIO_B);
-}
-
-// Enable the interrupt trigger capability for specific I/Os
-bool MCP23017Driver::enableInterrupts(bool port, uint8_t bitMask, uint8_t intMode)
+/**
+ * @class MCP23017Driver
+ * @brief Driver for the MCP23017 I2C 16-bit I/O expander
+ *
+ * NB  - The new MCP23017 does not support inputs on GPIOA7 and GPIOB7, which really makes it
+ * a 14-bit input expander (16-bit with outputs only).
+ *
+ * NB2 - This driver is tailored to input-only applications,
+ * though implementing writes for outputs shouldn't be too bad.
+ */
+class MCP23017Driver
 {
-    uint8_t intcon = 0, defval = 0;
+public:
+    /**
+     * @brief Begins the I2C communication and sets the I/Os.
+     */
+    bool begin();
 
-    if (intMode == INT_CHANGE){intcon = ~bitMask;}
-    else
-    {
-        if (intMode == INT_RISING){intcon = bitMask;defval = ~bitMask;}
-        else if (intMode == INT_FALLING){intcon = bitMask;defval = bitMask;}
-        this->i2c_write_8(port == 0 ? MCP23x17_DEFVAL_A: MCP23x17_DEFVAL_B, defval);
-    }
+    /**
+     * @brief sets the Input or Output mode of a whole port.
+     * @param port selects the port A or B (0 or 1).
+     * @param bitMask sets the state of each input (0-out ; 1-in).
+     */
+    bool pinMode(bool port, uint8_t bitMask);
 
-    this->i2c_write_8(port == 0 ? MCP23x17_INTCON_A : MCP23x17_INTCON_B, intcon);
+    /**
+     * @brief reads the Input or Output state of a whole port.
+     * @param port selects the port A or B (0 or 1).
+     */
+    uint8_t readPort(bool port);
 
-    this->i2c_write_8(port == 0 ? MCP23x17_GPINTEN_A : MCP23x17_GPINTEN_B, bitMask);
-    return true;
-}
+    /**
+     * @brief sets the Input or Output interrupt trigger of a whole port.
+     * @param port selects the port A or B (0 or 1).
+     * @param bitMask sets the state of each input (0-off ; 1-on).
+     * @param intMode Falling, Rising, or Change.
+     */
+    bool enableInterrupts(bool port, uint8_t bitMask, uint8_t intMode);
 
-// Get an 8-bit flag cluster of which pin triggered the interrupt
-uint8_t MCP23017Driver::getInterruptFlag(bool port)
-{
-    return i2c_read_8(port == 0 ? MCP23x17_INTF_A : MCP23x17_INTF_B);
-}
+    /**
+     * @brief returns a 8-bit flag cluster for which I/O triggered the interrupt.
+     * @param port selects the port A or B (0 or 1).
+     */
+    uint8_t getInterruptFlag(bool port);
 
-// Get an 8-bit pin state cluster of the state of the pins at the interrupt
-uint8_t MCP23017Driver::getInterruptRegister(bool port)
-{
-    return i2c_read_8(port == 0 ? MCP23x17_INTCAP_A : MCP23x17_INTCAP_A);
-}
+    /**
+     * @brief returns a 8-bit cluster for the state of each I/O.
+     * @param port selects the port A or B (0 or 1).
+     */
+    uint8_t getInterruptRegister(bool port);
 
-// Make interrupts A & B work for any input or just the respective port's
-bool MCP23017Driver::mirrorInterrupts(bool state)
-{   
-    uint8_t reg = i2c_read_8(MCP23x17_IOCR);
-    
-    if (state) {reg |= MCP23x17_IOCR_MIRROR;}
-    else {reg &= ~MCP23x17_IOCR_MIRROR;}
+    /**
+     * @brief sets interrupt A & B to either work for all I/O or just their port.
+     * @param state selects whether the pins mirror or not.
+     */
+    bool mirrorInterrupts(bool state);
 
-    i2c_write_8(MCP23x17_IOCR, reg);
+    /**
+     * @brief sets interrupt A & B to either work for all I/O or nothing.
+     * @param state selects whether the pins trigger the int or not.
+     */
+    bool enableAllInterrupt(bool state);
 
-    return true;
-}
+    /**
+     * @brief I2C write command to setup or read the chip.
+     * @param reg selects the register.
+     * @param data data to be sent to the register.
+     */
+    bool i2c_write_8(uint8_t reg, uint8_t data);
 
-// Write a register with given data over I2C
-bool MCP23017Driver::i2c_write_8(uint8_t reg, uint8_t data)
-{   
-    unsigned char buffer[2] = {reg, data};
-    if (write(_file_i2c, buffer, 2) != 2){
-        std::cerr << "Failed to write over I2C" << std::endl;
-		return false;
-    }
+    /**
+     * @brief I2C read command to read the chip's registers.
+     * @param reg selects the register.
+     */
+    uint8_t i2c_read_8(uint8_t reg);
 
-    return true;
-}
+    static const uint8_t INT_RISING = 0;
+    static const uint8_t INT_FALLING = 1;
+    static const uint8_t INT_CHANGE = 2;
 
-// Read an 8-bit register over I2C
-uint8_t MCP23017Driver::i2c_read_8(uint8_t reg)
-{
-    uint8_t buffer[1] = {reg};
+    static constexpr uint8_t ENC_NUM[3] = {0, 1, 2};
+    static constexpr uint8_t ENC_PUSH[3] = {1, 2, 4};
+    static constexpr uint8_t ENC_A[3] = {1, 4, 16};
+    static constexpr uint8_t ENC_B[3] = {2, 8, 32};
+};
 
-    if (write(_file_i2c, buffer, 1) != 1){
-        std::cerr << "Failed to write over I2C" << std::endl;
-		return 0x00;
-    }
-
-    if (read(_file_i2c, buffer, 1) != 1){
-        std::cerr << "Failed to read over I2C" << std::endl;
-		return 0x00;
-    }
-
-    return buffer[0];
-}
+#endif // MCP23017DRIVER_H

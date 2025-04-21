@@ -46,13 +46,9 @@ void Harmonizer::initRealtimeStretch()
 
     stretches.resize(semitones.size()); // Create stretch processors for each semitone
     outputBuffers.resize(semitones.size());
-    for (size_t i = 0; i < semitones.size(); ++i) / / Initialize each stretch processor
+    for (size_t i = 0; i < semitones.size(); ++i) /// Initialize each stretch processor
     {
         stretches[i].presetDefault(1, sampleRate);
-        outputBuffers[i].resize(blockSize);
-    }
-    {
-        stretches[i].presetDefault(1, sampleRate); /
         outputBuffers[i].assign(blockSize, 0.0f);
     }
 
@@ -89,7 +85,7 @@ float Harmonizer::process(float sample)
         float mixed = 0.0f; // Mix the output buffers
         for (const auto &buffer : outputBuffers)
         {
-            mixed += buffer[outputReadIndex]; /
+            mixed += buffer[outputReadIndex];
         }
         ++outputReadIndex; // Increment read index
         return mixed / outputBuffers.size();

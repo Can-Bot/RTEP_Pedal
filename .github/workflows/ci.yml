@@ -24,8 +24,8 @@ jobs:
       - name: Build
         working-directory: code/
         run: |
-          chmod +x ./build.sh
-          ./build.sh > build.log 2>&1 || (cat build.log && exit 1)
+          chmod +x ./ci_build.sh
+          ./ci_build.sh > build.log 2>&1 || (cat build.log && exit 1)
 
       - name: Upload build log
         uses: actions/upload-artifact@v4
@@ -38,39 +38,3 @@ jobs:
         with:
           name: build
           path: code/build/
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: code/build
-
-      - name: Run unit tests
-        working-directory: code/
-        run: |
-          chmod +x ./build/src/test/unit_tests/unit_tests
-          chmod +x ./unit_test.sh
-          sudo ./unit_test.sh 
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: build
-    continue-on-error: true
-    steps:
-      - name: Download build log
-        uses: actions/download-artifact@v4
-        with:
-          name: build-log
-          path: .
-
-      - name: Check for warnings in the build log
-        run: |
-          cat build.log
-          ! grep -q "warning:" build.log

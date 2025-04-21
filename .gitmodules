@@ -7,3 +7,9 @@
 [submodule "code/lib/vcpkg"]
 	path = code/lib/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "code/lib/iir1"]
+	path = code/lib/iir1
+	url = https://github.com/berndporr/iir1.git
+[submodule "code/lib/lg"]
+	path = code/lib/lg
+	url = https://github.com/joan2937/lg

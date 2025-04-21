@@ -34,12 +34,20 @@ fi
 
 # Clone and build lgpio if not already done
 if [ ! -d "lg" ]; then
-  git clone https://github.com/joan2937/lg
+  git submodule add -f https://github.com/joan2937/lg
+  cd lg
+  make
+  sudo make install
+  cd ..
 fi
 
-cd lg
-make
-sudo make install
+# Clone IIR filter library (header-only)
+if [ ! -d "iir1" ]; then
+  git submodule add -f https://github.com/berndporr/iir1.git ./iir1
+  cd iir1
+  git checkout master
+  cd ..
+fi
 
 cd "$original_directory"
 

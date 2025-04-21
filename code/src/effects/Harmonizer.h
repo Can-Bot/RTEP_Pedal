@@ -8,7 +8,6 @@
 #include "Effect.h"
 #include "../lib/signalsmith-stretch/signalsmith-stretch.h"
 #include "../lib/signalsmith-stretch/cmd/util/stopwatch.h"
-// #include "../lib/signalsmith-stretch/cmd/util/memory-tracker.h"
 #include "../lib/signalsmith-stretch/cmd/util/wav.h"
 
 /**
@@ -51,7 +50,6 @@ public:
      * @brief Generates a chord by layering multiple pitch-shifted versions of the input WAV.
      * @return True on success.
      */
-    // bool createChord();
 
     /**
      * @brief Processes an individual sample in real-time mode.
@@ -67,7 +65,6 @@ private:
     bool stretchInitialized = false;
     float lastSemitoneSetting = std::numeric_limits<float>::quiet_NaN();
     std::vector<float> inputBuffer;
-    // std::vector<float> outputBuffer;
     std::vector<std::vector<float>> outputBuffers;
     size_t inputWriteIndex = 0;
     size_t outputReadIndex = 0;
@@ -89,8 +86,8 @@ private:
     std::vector<std::chrono::high_resolution_clock::time_point> realtimeSampleTimestamps;
 
     int currentSemitone = 0;
-    double tonality = 8000.0;  ///< Controls tonality detection for pitch shifting.
-    double time = 1.0;         ///< Stretch ratio (1.0 = no stretch).
+    double tonality = 8000.0;  //< Controls tonality detection for pitch shifting.
+    double time = 1.0;         //< Stretch ratio (1.0 = no stretch).
     bool exactLength = false;
 
     // === Audio data structures ===
@@ -99,8 +96,6 @@ private:
     signalsmith::stretch::SignalsmithStretch<float> stretch;
 
     // === Profiling & Memory ===
-    // signalsmith::MemoryTracker initMemory;
-    // signalsmith::MemoryTracker processMemory;
     signalsmith::Stopwatch stopwatch;
 
     // === Internal helpers ===
@@ -119,7 +114,6 @@ private:
      * @param outfilename Destination merged WAV.
      * @return Path to the resulting merged file.
      */
-    // std::string mergeWavs(const char* infilename, const char* infilename2, const char* outfilename);
 
 protected:
     void parseConfig(const Config &config) override;

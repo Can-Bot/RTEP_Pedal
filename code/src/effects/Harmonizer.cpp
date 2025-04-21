@@ -6,13 +6,27 @@
 #include <filesystem>
 #include <algorithm>
 
+/**
+ * @brief Harmonizer constructor for offline use with file paths and semitone values.
+ * @param inputWav Input WAV filename (relative to assets/).
+ * @param outputWav Output WAV filename (relative to assets/).
+ * @param semitones List of semitone shifts to apply.
+ */
+
 Harmonizer::Harmonizer(const std::string &inputWav, const std::string &outputWav, const std::vector<int> &semitones)
-    : inputWav("assets/" + inputWav),
-      outputWav("assets/" + outputWav),
-      semitones(semitones)
+    : inputWav("assets/" + inputWav), // Input WAV used for offline processing (IE Wav Files)
+      outputWav("assets/" + outputWav), // The Output Wav file
+      semitones(semitones) // The number of semitones to shift by
 {
     IsActive = false;
 }
+
+/**
+ * @brief Updates the input/output filenames and semitone values.
+ * @param in New input file path.
+ * @param out New output file path.
+ * @param newSemitones New list of semitone shift values.
+ */
 
 void Harmonizer::updateInputs(const std::string &in, const std::string &out, const std::vector<int> &newSemitones)
 {
@@ -21,29 +35,45 @@ void Harmonizer::updateInputs(const std::string &in, const std::string &out, con
     semitones = newSemitones;
 }
 
+/**
+ * @brief Initializes stretch processors and buffers for real-time audio processing.
+ * Only called once, on-demand.
+ */
+
 void Harmonizer::initRealtimeStretch()
 {
-    if (stretchInitialized) return;
+    if (stretchInitialized) return; // Only initialize once
 
-    stretches.resize(semitones.size());
+    stretches.resize(semitones.size()); // Create stretch processors for each semitone
     outputBuffers.resize(semitones.size());
-    for (size_t i = 0; i < semitones.size(); ++i)
+    for (size_t i = 0; i < semitones.size(); ++i) / / Initialize each stretch processor
     {
         stretches[i].presetDefault(1, sampleRate);
+        outputBuffers[i].resize(blockSize);
+    }
+    {
+        stretches[i].presetDefault(1, sampleRate); /
         outputBuffers[i].assign(blockSize, 0.0f);
     }
 
-    inputBuffer.resize(blockSize);
+    inputBuffer.resize(blockSize); // Initialize input buffer
     inputWriteIndex = 0;
     outputReadIndex = blockSize;
-    stretchInitialized = true;
+    stretchInitialized = true; // Mark as initialized
 }
+
+/**
+ * @brief Processes a single audio sample in real time.
+ * Applies pitch shifting and returns the mixed output sample.
+ * @param sample The incoming audio sample.
+ * @return The processed (or passthrough) audio sample.
+ */
 
 float Harmonizer::process(float sample)
 {
-    if (!IsActive)
+    if (!IsActive) 
     {
-        return sample;
+        return sample; // If not active, return the sample as is
     }
     initRealtimeStretch();
 
@@ -52,16 +82,16 @@ float Harmonizer::process(float sample)
         realtimeStart = std::chrono::high_resolution_clock::now();
     }
 
-    inputBuffer[inputWriteIndex++] = sample;
+    inputBuffer[inputWriteIndex++] = sample; // Write sample to input buffer
 
-    if (outputReadIndex < blockSize)
+    if (outputReadIndex < blockSize) 
     {
-        float mixed = 0.0f;
+        float mixed = 0.0f; // Mix the output buffers
         for (const auto &buffer : outputBuffers)
         {
-            mixed += buffer[outputReadIndex];
+            mixed += buffer[outputReadIndex]; /
         }
-        ++outputReadIndex;
+        ++outputReadIndex; // Increment read index
         return mixed / outputBuffers.size();
     }
 
@@ -71,9 +101,9 @@ float Harmonizer::process(float sample)
         float *inputs[1] = {inputBuffer.data()};
         for (size_t i = 0; i < semitones.size(); ++i)
         {
-            stretches[i].setTransposeSemitones(semitones[i], tonality / sampleRate);
-            float *outputs[1] = {outputBuffers[i].data()};
-            stretches[i].process(inputs, blockSize, outputs, blockSize);
+            stretches[i].setTransposeSemitones(semitones[i], tonality / sampleRate); // Set semitone for each stretch processor
+            float *outputs[1] = {outputBuffers[i].data()}; // Output buffer for each stretch processor
+            stretches[i].process(inputs, blockSize, outputs, blockSize); // Process the input buffer
         }
 
         inputWriteIndex = 0;
@@ -91,6 +121,11 @@ float Harmonizer::process(float sample)
     return 0.0f;
 }
 
+/**
+ * @brief Sets up the stretch processor for offline processing.
+ * @param currentSemitone The semitone shift to apply for the current iteration.
+ */
+
 void Harmonizer::setupStretch(int currentSemitone)
 {
     if (!inWav.read(inputWav).warn())
@@ -99,22 +134,27 @@ void Harmonizer::setupStretch(int currentSemitone)
         return;
     }
 
-    const size_t inputLength = inWav.samples.size() / inWav.channels;
+    const size_t inputLength = inWav.samples.size() / inWav.channels; // Get the number of samples
     outWav.channels = inWav.channels;
     outWav.sampleRate = inWav.sampleRate;
 
-    const int outputLength = std::round(inputLength * time);
-    stretch.presetDefault(inWav.channels, inWav.sampleRate);
-    stretch.setTransposeSemitones(currentSemitone, tonality / inWav.sampleRate);
+    const int outputLength = std::round(inputLength * time); // Calculate the output length
+    stretch.presetDefault(inWav.channels, inWav.sampleRate); // Initialize the stretch processor
+    stretch.setTransposeSemitones(currentSemitone, tonality / inWav.sampleRate); // Set the semitone shift
 
-    inWav.samples.resize((inputLength + stretch.inputLatency()) * inWav.channels);
+    inWav.samples.resize((inputLength + stretch.inputLatency()) * inWav.channels); // Resize input buffer
     const int tailSamples = exactLength ? stretch.outputLatency() : (stretch.outputLatency() + stretch.inputLatency());
     outWav.samples.resize((outputLength + tailSamples) * outWav.channels);
 }
 
+/**
+ * @brief Performs the full offline audio stretch process.
+ * Handles seeking, processing, flushing and final output offset.
+ */
+
 void Harmonizer::processAudio()
 {
-    const size_t inputLength = inWav.samples.size() / inWav.channels;
+    const size_t inputLength = inWav.samples.size() / inWav.channels; //
     const size_t outputLength = std::round(inputLength * time);
 
     stretch.seek(inWav, stretch.inputLatency(), 1 / time);
@@ -125,6 +165,12 @@ void Harmonizer::processAudio()
     stretch.flush(outWav, stretch.outputLatency());
     outWav.offset -= outputLength;
 }
+
+/**
+ * @brief Processes the given semitone shift and writes result to WAV.
+ * @param iteration Index of the semitone shift to apply.
+ * @return True if processing succeeded.
+ */
 
 bool Harmonizer::process(int iteration)
 {
@@ -138,12 +184,26 @@ bool Harmonizer::process(int iteration)
     return true;
 }
 
+/**
+ * @brief Placeholder function for modifying raw audio data.
+ * Currently applies a gain of 1.0.
+ * @param data Audio sample buffer.
+ * @param count Total number of values.
+ * @param channels Number of audio channels.
+ */
+
 void Harmonizer::data_processing(double *data, int count, int channels)
 {
     for (int ch = 0; ch < channels; ++ch)
         for (int i = ch; i < count; i += channels)
             data[i] *= 1.0;
 }
+
+/**
+ * @brief Parses semitone shift configuration from user config.
+ * Enables the harmonizer if "harmonizer" is found in config.
+ * @param config The loaded configuration object.
+ */
 
 void Harmonizer::parseConfig(const Config &config)
 {
@@ -172,6 +232,11 @@ void Harmonizer::parseConfig(const Config &config)
 
     std::cout << "[Harmonizer] Total intervals loaded: " << semitones.size() << "\n";
 }
+
+/**
+ * @brief Destructor that reports timing stats if real-time processing was used.
+ * Prints samples processed, elapsed time, per-sample latency, and real-time ratio.
+ */
 
 Harmonizer::~Harmonizer()
 {

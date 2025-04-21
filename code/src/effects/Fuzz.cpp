@@ -6,7 +6,7 @@
 Fuzz::Fuzz()
 {
     IsActive = true;
-    Setting = 3.0f; // Default threshold
+    Setting = 1.0f; // Default threshold
 }
 
 float Fuzz::process(float sample)
@@ -26,7 +26,7 @@ float Fuzz::process(float sample)
     {
         threshold = 1.0f; // Fallback threshold
     }
-
+    std::cout << "Sample: " << sample << "Threshold: " << threshold << "\r";
     if (sample > threshold)
         return threshold;
     if (sample < -threshold)

@@ -101,7 +101,7 @@ code/
 | Unit Testing                     | ✅ GTest + Valgrind |
 | CI/CD Integration                | ✅ GitHub Actions |
 | Well-commented, structured code | ✅ Reviewed and documented |
-| Pedal UI and Config             | ⚠️ UI In Progress |
+| Pedal UI and Config             | ✅ Completed |
 
 ## 📜 License
 

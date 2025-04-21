@@ -29,9 +29,9 @@ float Fuzz::process(float sample)
     }
     sample *= gain; //Multiple by gain factor
     if (sample > threshold)
-        return threshold;
+        return threshold * gain;
     if (sample < -threshold)
-        return -threshold;
+        return -threshold * gain;
     return sample;
 }
 

@@ -17,19 +17,17 @@ float Fuzz::process(float sample)
         return sample;
     }
 
-    float threshold = 0.01f;
+    float threshold = 1024.0f;
     try
     {
-        //std::cout << "[Fuzz] Applying Fuzz\n";
-        threshold *= std::any_cast<float>(Setting);
+        gain = 1 + std::any_cast<float>(Setting); //add setting to gain
+        threshold = (1 -  std::any_cast<float>(Setting)) * 1024; //inversely proportional to setting
     }
     catch (...)
     {
         threshold = 1.0f; // Fallback threshold
     }
-    std::cout << std::fixed << std::showpos << std::setprecision(4)
-              << "Sample: " << sample << " Threshold: " << threshold << "\r";
-
+    sample *= gain; //Multiple by gain factor
     if (sample > threshold)
         return threshold;
     if (sample < -threshold)

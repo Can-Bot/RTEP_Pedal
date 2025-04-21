@@ -9,4 +9,5 @@ public:
 
 protected:
     void parseConfig(const Config &config) override;
+    float gain = 1.0f;
 };
